@@ -19,9 +19,13 @@ class DriveAPI:
   
     def __init__(self):       
         self.creds = None
+        # File token.pickle lưu trữ các mã truy cập và làm mới của token, và
+        # được tạo tự động khi cấp quyền hoàn tất trong lần đầu tiên
+
         if os.path.exists('token.pickle'):
             with open('token.pickle', 'rb') as token:
                 self.creds = pickle.load(token)
+               
         if not self.creds or not self.creds.valid:
   
             if self.creds and self.creds.expired and self.creds.refresh_token:
@@ -37,72 +41,70 @@ class DriveAPI:
         results = self.service.files().list(
             pageSize=100, fields="files(id, name)").execute()
         items = results.get('files', [])
-        print("Here's a list of files: \n")
+        print("Files có trong drive: \n")
         print(*items, sep="\n", end="\n\n")
   
     def FileDownload(self, file_id, file_name):
         request = self.service.files().get_media(fileId=file_id)
         fh = io.BytesIO()
           
-        # Initialise a downloader object to download the file
+        # Khởi tạo đối tượng tải xuống để tải tệp xuống
         downloader = MediaIoBaseDownload(fh, request, chunksize=204800)
         done = False
   
         try:
-            # Download the data in chunks
+            # Tải xuống dữ liệu theo từng phần
             while not done:
                 done = downloader.next_chunk()
   
             fh.seek(0)
               
-            # Write the received data to the file
+            # Ghi dữ liệu đã nhận vào tệp
             with open(file_name, 'wb') as f:
                 shutil.copyfileobj(fh, f)
   
-            print("File Downloaded")
-            # Return True if file Downloaded successfully
+            print("File tai ve thanh cong")
+            # Nếu file tải về thành công in như trên
             return True
-        except:
-            
-            # Return False if something went wrong
-            print("Something went wrong.")
+        except:  
+            print("Không tải được file.")
+            # Nếu file tải về thành công in như trên
             return False
   
     def FileUpload(self, filepath):
         
-        # Extract the file name out of the file path
+        # Giải nén tên tệp ra khỏi đường dẫn tệp
         name = filepath.split('/')[-1]
           
-        # Find the MimeType of the file
+        # Tìm MimeType của file
         mimetype = MimeTypes().guess_type(name)[0]
           
-        # create file metadata
+        # Tạo file metadata
         file_metadata = {'name': name}
   
         try:
             media = MediaFileUpload(filepath, mimetype=mimetype)
               
-            # Create a new file in the Drive storage
+            # Tạo file mới trong drive
             file = self.service.files().create(body=file_metadata, media_body=media, fields='id').execute()
             
-            print("File Uploaded.")
+            print("File da tai len.")
           
         except:
               
-            # Raise UploadError if file is not uploaded.
-            print("Can't Upload File.")
-  
+            print("Khong tai duoc file len.")
+            # Nếu file không tải lên được
 if __name__ == "__main__":
     obj = DriveAPI()
-    x = int(input("Enter your choice: 1 - Download file, 2- Upload File, 3- Exit.\n"))
+    x = int(input("Enter your choice: 1 - Tải file về máy, 2- Tải file lên drive, 3- Thoát.\n"))
       
     if x == 1:
-        f_id = input("Enter file id: ")
-        f_name = input("Enter file name: ")
+        f_id = input("Nhap file id: ")
+        f_name = input("Nhap tên file: ")
         obj.FileDownload(f_id, f_name)
           
     elif x == 2:
-        f_path = input("Enter full file path: ")
+        f_path = input("Nhập địa chỉ đầy đủ của file: ")
         obj.FileUpload(f_path)
       
     else:
